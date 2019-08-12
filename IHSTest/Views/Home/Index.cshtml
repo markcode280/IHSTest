@@ -1,0 +1,117 @@
+﻿@model IHSTest.Models.MapLocation
+@{
+    ViewBag.Title = "Home Page";
+}
+
+
+<div class="row">
+    <div class="col-md-4">
+        @Html.Label("Search Location")
+        <input type="text" name="enter" class="form-control" placeholder="Write something here!" value="It´s a wonderful day!" id="textbox" />
+        <input type="button" class="form-control" onclick="GetURL()" value="submit" />
+
+
+    </div>
+    <div class="col-md-4">
+        <h2>My Map</h2>
+        <div id="map" class="map"></div>
+        <script type="text/javascript">
+
+        </script>
+    </div>
+
+    <script type="text/javascript">
+
+        var textbox;
+        function onload() {
+            //Get value.
+            textbox = document.getElementById('textbox');
+        }
+       
+        // Maps access token goes here
+        var key = '030c11f63fccea';
+       
+        
+        
+        // Add layers that we need to the map
+        var streets = L.tileLayer.Unwired({ key: key, scheme: "streets" });
+
+        // Initialize the map
+        var map = L.map('map', {
+            center: [39.73, -104.99], // Map loads with this location as center
+            zoom: 14,
+            scrollWheelZoom: false,
+            layers: [streets] // Show 'streets' by default
+        });
+
+        // Add the 'scale' control
+        L.control.scale().addTo(map);
+
+        // Add the 'layers' control
+        L.control.layers({
+            "Streets": streets
+        }).addTo(map);
+
+        var popup = L.popup()
+            .setLatLng([39.7236, -104.985]);
+
+        // onMapClick function to popup co-ordinates
+        function GetURL() {
+            var urlEncoded = encodeURI(textbox.value)
+
+            var settings = {
+                "async": true,
+                "crossDomain": true,
+                "url": "https://us1.locationiq.com/v1/search.php?key=" + key + "&q=" + urlEncoded+"&format=json",
+                "method": "GET",
+
+            }
+            $.ajax(settings).done(function (response) {
+                if (response != undefined) {
+                    L.marker([response[0].lat, response[0].lon])
+                        .addTo(map)
+                        .bindPopup("You clicked the map at Longitude: " + [response[0].lat + " Longitude: " + response[0].lon])
+                        .openPopup();
+
+                    var postToServer =
+                    {
+                        "async": false,
+                        "crossDomain": true,
+                        "url": "Index",
+                        "method": "POST",
+                        "data": response[0]
+                    }
+
+                    $.ajax(postToServer).done(function (response) {
+                        if (response != undefined) {
+                            textbox.value = "";
+                            textbox.innerHTML = ""
+                            alert('successfully changed location!');
+                        } 
+                            alert('Error proccessing request to Server');
+                        
+
+                    }).fail(function (jqXHR, textStatus, errorThrown) { alert('Error proccessing request to Server'); });
+                } 
+               
+               
+              
+            }).fail(function (jqXHR, textStatus, errorThrown) { alert('Error proccessing request from Api Server'); });
+            return "";
+        }
+        function onMapClick(e) {
+
+            L.marker(e.latlng)
+                .addTo(map)
+                .bindPopup("Result (Longitude: " + e.latlng.lat + ", Latitude: " + e.latlng.lng+")")
+                .openPopup();
+
+
+
+        }
+
+        map.on('click', onMapClick);
+        
+
+    </script>
+</div>
